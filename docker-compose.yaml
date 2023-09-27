@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  # These are the configurations for our Node app
+  # When Docker Compose starts this container it will automatically
+  # use the Dockerfile in the directory to configure it
+  backend:
+    build: 
+      context: backend
+      dockerfile: Dockerfile
+    command: npm start
+    volumes:
+      - ./src:/usr/app/
+      - /usr/app/node_modules
+    ports:
+      - 5000:5000
+    networks: # Networks to join (Services on the same network can communicate with each other using their name)
+      - backend
+      - frontend
+
+  client:
+    build:
+      context: frontend  # Use an image built from the specified dockerfile in the `polling-app-client` directory.
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: http://127.0.0.1:5000/api
+    ports:
+      - "3000:3000" # Map the exposed port 80 on the container to port 9090 on the host machine
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - frontend  
+  db:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"
+    restart: always
+    environment:
+      MYSQL_DATABASE: auth_db
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend 
+  adminer:
+    image: adminer
+    restart: always
+    networks:
+      - backend
+    ports:
+      - 8081:8080 
+volumes:
+  db-data:
+
+# Networks to be created to facilitate communication between containers
+networks:
+  backend:
+  frontend:
